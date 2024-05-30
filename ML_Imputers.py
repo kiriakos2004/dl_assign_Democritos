@@ -27,7 +27,8 @@ def list_column_names():
 list_column_names()
 
 # a list of possible columns that we would like to drop
-drop_list = ['##', '##', '##']
+drop_list = ['DATETIME', 'LATITUDE', 'LONGITUDE', 'WATER DEPTH', 'PROPELLER SHAFT TORQUE', 'AIR PRESSURE AT SEA LEVEL', 'AIR TEMPERATURE AT 10M', 'SEA TEMPERATURE', 'SHAFT POWER', 
+'PROPELLER SHAFT REVOLUTIONS', 'ME FUEL CONSUMPTION', 'FUEL LOAD %']
 
 #exclude drop_list attributes
 data = data.drop(drop_list, axis=1)
@@ -201,11 +202,11 @@ def find_maxx_diff_kNN():
     for i in list:    
         temp1 = no_nans_dublicate.sub(create_kNN_imputed_dataframe(i)[1])
         temp2 = temp1.abs()
-        #temp3 = temp2.div(no_nans_dublicate)
+        temp3 = temp2.div(no_nans_dublicate)
         temp2.to_csv(f"abs_diff_for_k={i}.csv")
-        #temp_series = temp3.max()
-        #max_per_diff = temp_series.max()
-    #results.append(max_per_diff)
+        temp_series = temp3.max()
+        max_per_diff = temp_series.max()
+    results.append(max_per_diff)
 #find_maxx_diff_kNN()
 
 

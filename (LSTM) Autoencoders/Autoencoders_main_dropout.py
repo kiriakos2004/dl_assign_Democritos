@@ -37,7 +37,7 @@ class TimeSeriesDataset(Dataset):
         return data_seq, mask_seq
 
 # Load data
-data_missing = pd.read_csv("data_missing_20_percent.csv")
+data_missing = pd.read_csv("data_missing_10_percent.csv")
 
 # Drop first column due to csv creation
 data_missing = data_missing.iloc[: , 1:]
@@ -79,6 +79,14 @@ mask_val = mask[train_size:train_size + val_size].values
 impute_data = pd.DataFrame(imputer.transform(impute_data), columns=impute_data.columns)
 impute_data_scaled = min_max_scaler.transform(impute_data)
 mask_impute = mask[train_size + val_size:].values
+
+#count missing values
+missing_count = np.sum(mask_impute == 0)
+
+# Creating a mask for results calculations ('find_maxx_diff_AE' function)
+mask_impute_temp = np.where(mask_impute == 0, 1, 0)
+mask_impute_for_results = pd.DataFrame(mask_impute_temp, columns=df_original.columns, index=impute_data.index)
+
 
 # Creation of dataloaders (shuffle=False since ordering matters)
 train_dataset = TimeSeriesDataset(train_data_scaled, mask_train, seq_len)
@@ -216,3 +224,36 @@ impute_df_unscaled = pd.DataFrame(min_max_scaler.inverse_transform(impute_data_c
 # Save the imputed dataframe to CSV
 impute_df_unscaled.to_csv('imputed_data.csv', index=False)
 print("Imputed data saved to imputed_data.csv.")
+
+def find_maxx_diff_AE(results):
+    data_for_test = pd.read_csv("data_complete_for_test_scaled.csv")
+    data_for_test = data_for_test.mul(mask_impute_for_results)
+    AE_data = results.mul(mask_impute_for_results)
+    temp1 = data_for_test.subtract(AE_data)
+    temp2 = temp1.abs()
+    temp2.to_csv("abs_diff_for_AE.csv")
+#find_maxx_diff_AE(impute_data_combined)
+
+#Check the ks for autoencoders
+def check_ks_test():
+    data_for_test = pd.read_csv("data_complete_for_test_scaled.csv")
+    AE_data = pd.read_csv("imputed_data.csv")
+    print("starting the check_ks_test function")
+    pvalues=[]
+    for column in df_original.columns:
+        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(AE_data[column], data_for_test[column]))[1]}"
+        pvalues.append(pvalue)
+    print(f"The p values of the autoencoders imputed dataframe are: {pvalues}")
+#check_ks_test()
+
+def find_RMSE(results):
+    data_for_test = pd.read_csv("data_complete_for_test_scaled.csv")
+    data_for_test = data_for_test.mul(mask_impute_for_results)
+    AE_data = results.mul(mask_impute_for_results)
+    temp1 = data_for_test.sub(AE_data)
+    temp2 = temp1.mul(temp1)
+    RMSE = math.sqrt((temp2.sum().sum())/missing_count)
+    print(f" The RMSE value of the iterative imputed dataframe is: {RMSE}")
+#find_RMSE(impute_data_combined)
+
+
