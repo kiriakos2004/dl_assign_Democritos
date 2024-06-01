@@ -19,5 +19,5 @@ Regarding the dl portion of this project, Autoencoders and Variational Autoencod
 
   •	VAE Autoencoder with 2 LSTM layers for encoder and 2 LSTM layers for the decoder
 
-In all of the above configurations various hyperparameters were tested and as long as regularization technics like dropout layers and weight_decay.
+In all of the above configurations various hyperparameters were tested and as long as regularization technics like dropout layers and weight_decay.The python library used was pytorch
 
