@@ -27,3 +27,5 @@ The context of this project is data that origin from a ship’s Automatic Data L
 
 The initial dataset has 228724 rows and 66 columns. In order to reduce the size of this repo, only the dataset that has been produced after the implementation of 10% missingness is provided, user can increase the missingness percentage using code provided.For the training validation and testing of the various Autoencoders, the dataset was splitted in train, validation and test datasets in the following percentages (70%, 10%, 20%). The dataset is constructed by concatenation of DIFFERENT ship trips that have different conditions (ship speed, load conditions) so it is considered ideal to test the “true” inference performance of the Autoencoders.
 
+The code has been created with the use of python version 3.9.13. In order to recreate the same working enviroment (and to ensure trouble-free code execusion) it is advised to run under virtual enviroment that should be created with the use of requirements.txt (attached).
+
