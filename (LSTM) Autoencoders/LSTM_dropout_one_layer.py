@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 # Define training parameters
-embedding_dim = 24
+embedding_dim = 40
 batch_size = 32
 learning_rate = 0.001
 seq_len = 10
@@ -45,7 +45,7 @@ class Decoder(nn.Module):
         x = self.output_layer(x)
         return x
 
-class RecurrentAutoencoder(nn.Module):
+class RecurrentAutoencoder_one_layer(nn.Module):
     def __init__(self, seq_len, n_features, embedding_dim, dropout_rate, device):
         super(RecurrentAutoencoder, self).__init__()
         self.encoder = Encoder(seq_len, n_features, embedding_dim, dropout_rate).to(device)

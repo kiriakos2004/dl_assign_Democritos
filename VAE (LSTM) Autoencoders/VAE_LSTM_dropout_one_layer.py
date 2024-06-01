@@ -49,7 +49,7 @@ class Decoder(nn.Module):
         x = self.output_layer(x)
         return x
 
-class RecurrentVAE(nn.Module):
+class RecurrentVAE_one_layer(nn.Module):
     def __init__(self, seq_len, n_features, embedding_dim, dropout_rate, device):
         super(RecurrentVAE, self).__init__()
         self.encoder = Encoder(seq_len, n_features, embedding_dim, dropout_rate).to(device)

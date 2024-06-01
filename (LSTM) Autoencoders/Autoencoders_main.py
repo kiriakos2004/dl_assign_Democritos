@@ -7,19 +7,33 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import MinMaxScaler
-from VAE_LSTM_dropout_one_layer import RecurrentVAE
-import VAE_LSTM_dropout_one_layer
+from LSTM_dropout import RecurrentAutoencoder
+import LSTM_dropout
+from LSTM_dropout_one_layer import RecurrentAutoencoder_one_layer
+import LSTM_dropout_one_layer
 import matplotlib.pyplot as plt
 
 num_epochs = 200
 patience = 10
 weight_decay = 0
-dropout_rate = VAE_LSTM_dropout_one_layer.dropout_rate
-embedding_dim = VAE_LSTM_dropout_one_layer.embedding_dim
-learning_rate = VAE_LSTM_dropout_one_layer.learning_rate
-batch_size = VAE_LSTM_dropout_one_layer.batch_size
-seq_len = VAE_LSTM_dropout_one_layer.seq_len
-device = VAE_LSTM_dropout_one_layer.device
+
+#choose parameters specific to model
+
+dropout_rate = LSTM_dropout.dropout_rate
+embedding_dim = LSTM_dropout.embedding_dim
+learning_rate = LSTM_dropout.learning_rate
+batch_size = LSTM_dropout.batch_size
+seq_len = LSTM_dropout.seq_len
+device = LSTM_dropout.device
+
+'''
+dropout_rate = LSTM_dropout_one_layer.dropout_rate
+embedding_dim = LSTM_dropout_one_layer.embedding_dim
+learning_rate = LSTM_dropout_one_layer.learning_rate
+batch_size = LSTM_dropout_one_layer.batch_size
+seq_len = LSTM_dropout_one_layer.seq_len
+device = LSTM_dropout_one_layer.device
+'''
 
 # Define the dataset class
 class TimeSeriesDataset(Dataset):
@@ -37,7 +51,7 @@ class TimeSeriesDataset(Dataset):
         return data_seq, mask_seq
 
 # Load data
-data_missing = pd.read_csv("data_missing_10_percent.csv")
+data_missing = pd.read_csv("data_missing_20_percent.csv")
 
 # Drop first column due to csv creation
 data_missing = data_missing.iloc[: , 1:]
@@ -56,7 +70,7 @@ val_data = data_missing[train_size:train_size + val_size]
 impute_data = data_missing[train_size + val_size:]
 
 # Save data to be imputed
-#impute_data.to_csv('data_to_be_imputed.csv', index=False)
+impute_data.to_csv('data_to_be_imputed.csv', index=False)
 
 # Create mask for missing values
 mask = data_missing.notna().astype(int)
@@ -80,13 +94,6 @@ impute_data = pd.DataFrame(imputer.transform(impute_data), columns=impute_data.c
 impute_data_scaled = min_max_scaler.transform(impute_data)
 mask_impute = mask[train_size + val_size:].values
 
-#count missing values
-missing_count = np.sum(mask_impute == 0)
-
-# Creating a mask for results calculations ('find_maxx_diff_AE' function)
-mask_impute_temp = np.where(mask_impute == 0, 1, 0)
-mask_impute_for_results = pd.DataFrame(mask_impute_temp, columns=df_original.columns, index=impute_data.index)
-
 # Creation of dataloaders (shuffle=False since ordering matters)
 train_dataset = TimeSeriesDataset(train_data_scaled, mask_train, seq_len)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
@@ -97,27 +104,29 @@ val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 impute_dataset = TimeSeriesDataset(impute_data_scaled, mask_impute, seq_len)
 impute_dataloader = DataLoader(impute_dataset, batch_size=1, shuffle=False)
 
-# Initialize model, loss function and optimizer
-#model = RecurrentVAE(seq_len, train_data_scaled.shape[1], embedding_dim, device)
-model = RecurrentVAE(
+# Initialize model, loss function and optimizer (select which model to instansiate.
+model = RecurrentAutoencoder(
     seq_len, 
     train_data_scaled.shape[1], 
-    embedding_dim=embedding_dim,
     dropout_rate=dropout_rate,
+    embedding_dim=embedding_dim, 
     device=device
 )
+
+'''
+model = RecurrentAutoencoder_one_layer(
+    seq_len, 
+    train_data_scaled.shape[1], 
+    dropout_rate=dropout_rate,
+    embedding_dim=embedding_dim, 
+    device=device
+)'''
+
 
 criterion = nn.MSELoss(reduction='none')
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-# Function to compute loss for VAE
-def vae_loss(recon_x, x, mean, log_var, mask):
-    BCE = criterion(recon_x, x)
-    BCE = (BCE * mask).sum() / mask.sum()
-    KLD = -0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
-    return BCE + KLD / x.shape[0]
 
-# Training loop with tqdm progress bar
 # Prepare the plot
 plt.ion()
 fig, ax = plt.subplots()
@@ -138,19 +147,21 @@ for epoch in range(num_epochs):
             data_seq = data_seq.float().to(device)
             mask_seq = mask_seq.float().to(device)
             
-            output, mean, log_var = model(data_seq)
-            loss = vae_loss(output, data_seq, mean, log_var, mask_seq)
+            output = model(data_seq)
+            loss = criterion(output, data_seq)
+            masked_loss = (loss * mask_seq).sum() / mask_seq.sum()
 
             optimizer.zero_grad()
-            loss.backward()
+            masked_loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
-            running_loss += loss.item()
+            running_loss += masked_loss.item()
             tepoch.set_postfix(loss=running_loss/len(train_dataloader))
-    epoch_train_loss = running_loss / len(train_dataloader)
-    train_losses.append(epoch_train_loss)
-    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_dataloader):.4f}')
+
+    train_loss = running_loss / len(train_dataloader)
+    train_losses.append(train_loss)
+    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {train_loss:.4f}')
 
     # Validation phase
     model.eval()
@@ -161,9 +172,10 @@ for epoch in range(num_epochs):
             data_seq = data_seq.float().to(device)
             mask_seq = mask_seq.float().to(device)
             
-            output, mean, log_var = model(data_seq)
-            loss = vae_loss(output, data_seq, mean, log_var, mask_seq)
-            val_loss += loss.item()
+            output = model(data_seq)
+            loss = criterion(output, data_seq)
+            masked_loss = (loss * mask_seq).sum() / mask_seq.sum()
+            val_loss += masked_loss.item()
     
     val_loss /= len(val_dataloader)
     val_losses.append(val_loss)
@@ -181,8 +193,6 @@ for epoch in range(num_epochs):
         break
     print(f'Current number of epochs with no improve from {round(best_val_loss,4)} is:{epochs_with_no_improve}')
     # Update the plot
-
-    # Update the plot
     ax.clear()
     ax.plot(train_losses, label='Training Loss')
     ax.plot(val_losses, label='Validation Loss')
@@ -199,60 +209,34 @@ plt.show()
 
 print("Training complete.")
 
-# Imputing function
-model.eval()
+
+# Initialize list
 imputed_values = []
 
+# Using trained model to impute values
 with torch.no_grad():
     for batch in impute_dataloader:
         data_seq, mask_seq = batch
         data_seq = data_seq.float().to(device)
-
-        output, mean, log_var = model(data_seq)  # Unpack the returned tuple
+        
+        output = model(data_seq)
         imputed_values.append(output.squeeze(0).cpu().numpy())
 
+# Convert imputed_values to a DataFrame
 imputed_values = np.concatenate(imputed_values, axis=0)
-imputed_values = imputed_values[:len(impute_data_scaled)]
+imputed_values = imputed_values[:len(impute_data_scaled)]  # Ensure the correct length
 
+# Construct the imputed dataframe for the 20% impute_data
 impute_df_original = df_original.iloc[train_size + val_size:train_size + val_size + len(imputed_values)]
 impute_df = pd.DataFrame(imputed_values, columns=df_original.columns, index=impute_df_original.index)
 
+# Combine imputed values with the original impute_data to leave observed values untouched
 impute_data_combined = impute_data_scaled.copy()
 impute_data_combined[mask_impute == 0] = impute_df.values[mask_impute == 0]
 
+# Unscale imputed dataset back to original numbers
 impute_df_unscaled = pd.DataFrame(min_max_scaler.inverse_transform(impute_data_combined), columns=df_original.columns, index=impute_df_original.index)
-impute_df_unscaled.to_csv('imputed_data_VAE.csv', index=False)
+
+# Save the imputed dataframe to CSV
+impute_df_unscaled.to_csv('imputed_data.csv', index=False)
 print("Imputed data saved to imputed_data.csv.")
-
-def find_maxx_diff_AE(results):
-    data_for_test = pd.read_csv("data_complete_for_test_scaled.csv")
-    data_for_test = data_for_test.mul(mask_impute_for_results)
-    AE_data = results.mul(mask_impute_for_results)
-    temp1 = data_for_test.subtract(AE_data)
-    temp2 = temp1.abs()
-    temp2.to_csv("abs_diff_for_AE.csv")
-#find_maxx_diff_AE(impute_data_combined)
-
-#Check the ks for autoencoders
-def check_ks_test():
-    data_for_test = pd.read_csv("data_complete_for_test_scaled.csv")
-    AE_data = pd.read_csv("imputed_data.csv")
-    print("starting the check_ks_test function")
-    pvalues=[]
-    for column in df_original.columns:
-        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(AE_data[column], data_for_test[column]))[1]}"
-        pvalues.append(pvalue)
-    print(f"The p values of the autoencoders imputed dataframe are: {pvalues}")
-#check_ks_test()
-
-def find_RMSE(results):
-    data_for_test = pd.read_csv("data_complete_for_test_scaled.csv")
-    data_for_test = data_for_test.mul(mask_impute_for_results)
-    AE_data = results.mul(mask_impute_for_results)
-    temp1 = data_for_test.sub(AE_data)
-    temp2 = temp1.mul(temp1)
-    RMSE = math.sqrt((temp2.sum().sum())/missing_count)
-    print(f" The RMSE value of the iterative imputed dataframe is: {RMSE}")
-#find_RMSE(impute_data_combined)
-
-
