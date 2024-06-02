@@ -1,0 +1,4 @@
+10_percent: 0.0979
+20_percent: 0.0862
+30_percent: 0.0911
+50_percent: 0.1054

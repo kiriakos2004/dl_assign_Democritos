@@ -4,6 +4,7 @@ Autoencoders 10% (a):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0032
 	Validation Loss: 0.0152
@@ -15,20 +16,36 @@ Autoencoders 10% (b):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0093
 	Validation Loss: 0.0162
 
 Autoencoders 1 layer 10% (c):
 	num_epochs = 600
-	patience = 50
+	patience = 100
 	dropout_rate = 0.1
 	embedding_dim = 40
 	batch_size = 32
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 10
-	Loss: 0.0028
-	Validation Loss: 0.0092
+	Loss: 0.0030
+	Validation Loss: 0.0109
+	The RMSE value of the iterative imputed dataframe is: 0.4181
+
+Autoencoders 1 layer 10% (c1):
+	num_epochs = 600
+	patience = 100
+	dropout_rate = 0.2
+	embedding_dim = 40
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 10
+	Loss: 
+	Validation Loss: 
+	The RMSE value of the iterative imputed dataframe is:
 
 Autoencoders 20% (d):
 	num_epochs = 200
@@ -36,6 +53,7 @@ Autoencoders 20% (d):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0079
 	Validation Loss: 0.0168
@@ -47,6 +65,7 @@ Autoencoders 20% (e):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0084
 	Validation Loss: 0.0141
@@ -58,6 +77,7 @@ Autoencoders 30% (f):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0113
 	Validation Loss: 0.0186
@@ -69,6 +89,7 @@ Autoencoders 50% (g):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0391
 	Validation Loss: 0.0465
@@ -80,6 +101,7 @@ Autoencoders 50% (h):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0146
 	Validation Loss: 0.0182
@@ -91,8 +113,9 @@ VAE Autoencoders 10% (i):
 	embedding_dim = 24
 	batch_size = 128
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
-	Epoch [120/200], Loss: 0.0402
+	Loss: 0.0402
 	Validation Loss: 0.0462
 
 VAE Autoencoders 1 layer 10% (l):
@@ -102,6 +125,7 @@ VAE Autoencoders 1 layer 10% (l):
 	embedding_dim = 24
 	batch_size = 32
 	learning_rate = 0.001
+	weight_decay = 0
 	seq_len = 100
 	Loss: 0.0278
 	Validation Loss: 0.0430
