@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,6 +13,8 @@ import VAE_LSTM_dropout
 from VAE_LSTM_dropout_one_layer import RecurrentVAE_one_layer
 import VAE_LSTM_dropout_one_layer
 import matplotlib.pyplot as plt
+import math
+from scipy import stats
 
 num_epochs = 200
 patience = 10
@@ -69,6 +72,9 @@ train_data = data_missing[:train_size]
 val_data = data_missing[train_size:train_size + val_size]
 impute_data = data_missing[train_size + val_size:]
 
+#count the total number of missing values of data to be imputed
+impute_missing = impute_data.isnull().sum().sum()
+
 # Save data to be imputed
 #impute_data.to_csv('data_to_be_imputed.csv', index=False)
 
@@ -92,6 +98,7 @@ mask_val = mask[train_size:train_size + val_size].values
 # Using transform function not to "leak" information to test dataset 
 impute_data = pd.DataFrame(imputer.transform(impute_data), columns=impute_data.columns)
 impute_data_scaled = min_max_scaler.transform(impute_data)
+impute_data_scaled_df = pd.DataFrame(impute_data_scaled, columns=impute_data.columns)
 mask_impute = mask[train_size + val_size:].values
 
 # Creation of dataloaders (shuffle=False since ordering matters)
@@ -236,10 +243,30 @@ impute_df = pd.DataFrame(imputed_values, columns=df_original.columns, index=impu
 impute_data_combined = impute_data_scaled.copy()
 impute_data_combined[mask_impute == 0] = impute_df.values[mask_impute == 0]
 
+imputed_df_scaled = pd.DataFrame(impute_data_combined, columns=df_original.columns)
+
 impute_df_unscaled = pd.DataFrame(min_max_scaler.inverse_transform(impute_data_combined), columns=df_original.columns, index=impute_df_original.index)
 impute_df_unscaled.to_csv('imputed_data_VAE.csv', index=False)
 print("Imputed data saved to imputed_data.csv.")
 
+def check_ks_test(method_name):
+    file_path = os.path.join(os.getcwd(), "p-values.txt")
+    print("starting the check_ks_test function")
+    pvalues=[]
+    for column in df_original.columns:
+        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(method_name[column], impute_data_scaled_df[column]))[1]}"
+        pvalues.append(pvalue)
+    with open(file_path, "w") as file:
+        for item in pvalues:
+            file.write("%s\n" % item)
+    print(f"The p values of the iterative imputed dataframe are: {pvalues}")
+#check_ks_test(imputed_df_scaled)
 
+def find_RMSE(method):
+    temp1 = impute_data_scaled_df.sub(method)
+    temp2 = temp1.mul(temp1)
+    RMSE = math.sqrt((temp2.sum().sum())/impute_missing)
+    print(f" The RMSE value of the iterative imputed dataframe is: {RMSE}")
+#find_RMSE(imputed_df_scaled)
 
 
