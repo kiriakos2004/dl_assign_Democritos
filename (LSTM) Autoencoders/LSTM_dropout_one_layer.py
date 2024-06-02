@@ -47,7 +47,7 @@ class Decoder(nn.Module):
 
 class RecurrentAutoencoder_one_layer(nn.Module):
     def __init__(self, seq_len, n_features, embedding_dim, dropout_rate, device):
-        super(RecurrentAutoencoder, self).__init__()
+        super(RecurrentAutoencoder_one_layer, self).__init__()
         self.encoder = Encoder(seq_len, n_features, embedding_dim, dropout_rate).to(device)
         self.decoder = Decoder(seq_len, embedding_dim, n_features, dropout_rate).to(device)
 

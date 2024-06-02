@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,6 +13,8 @@ import LSTM_dropout
 from LSTM_dropout_one_layer import RecurrentAutoencoder_one_layer
 import LSTM_dropout_one_layer
 import matplotlib.pyplot as plt
+import math
+from scipy import stats
 
 num_epochs = 200
 patience = 10
@@ -51,7 +54,7 @@ class TimeSeriesDataset(Dataset):
         return data_seq, mask_seq
 
 # Load data
-data_missing = pd.read_csv("data_missing_20_percent.csv")
+data_missing = pd.read_csv("data_missing_10_percent.csv")
 
 # Drop first column due to csv creation
 data_missing = data_missing.iloc[: , 1:]
@@ -68,6 +71,9 @@ impute_size = len(data_missing) - train_size - val_size
 train_data = data_missing[:train_size]
 val_data = data_missing[train_size:train_size + val_size]
 impute_data = data_missing[train_size + val_size:]
+
+#count the total number of missing values of data to be imputed
+impute_missing = impute_data.isnull().sum().sum()
 
 # Save data to be imputed
 impute_data.to_csv('data_to_be_imputed.csv', index=False)
@@ -92,6 +98,7 @@ mask_val = mask[train_size:train_size + val_size].values
 # Using transform function not to "leak" information to test dataset 
 impute_data = pd.DataFrame(imputer.transform(impute_data), columns=impute_data.columns)
 impute_data_scaled = min_max_scaler.transform(impute_data)
+impute_data_scaled_df = pd.DataFrame(impute_data_scaled, columns=impute_data.columns)
 mask_impute = mask[train_size + val_size:].values
 
 # Creation of dataloaders (shuffle=False since ordering matters)
@@ -120,8 +127,8 @@ model = RecurrentAutoencoder_one_layer(
     dropout_rate=dropout_rate,
     embedding_dim=embedding_dim, 
     device=device
-)'''
-
+)
+'''
 
 criterion = nn.MSELoss(reduction='none')
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -209,7 +216,6 @@ plt.show()
 
 print("Training complete.")
 
-
 # Initialize list
 imputed_values = []
 
@@ -234,9 +240,31 @@ impute_df = pd.DataFrame(imputed_values, columns=df_original.columns, index=impu
 impute_data_combined = impute_data_scaled.copy()
 impute_data_combined[mask_impute == 0] = impute_df.values[mask_impute == 0]
 
+imputed_df_scaled = pd.DataFrame(impute_data_combined, columns=df_original.columns)
+
 # Unscale imputed dataset back to original numbers
 impute_df_unscaled = pd.DataFrame(min_max_scaler.inverse_transform(impute_data_combined), columns=df_original.columns, index=impute_df_original.index)
 
 # Save the imputed dataframe to CSV
 impute_df_unscaled.to_csv('imputed_data.csv', index=False)
 print("Imputed data saved to imputed_data.csv.")
+
+def check_ks_test(method_name):
+    file_path = os.path.join(os.getcwd(), "p-values.txt")
+    print("starting the check_ks_test function")
+    pvalues=[]
+    for column in df_original.columns:
+        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(method_name[column], impute_data_scaled_df[column]))[1]}"
+        pvalues.append(pvalue)
+    with open(file_path, "w") as file:
+        for item in pvalues:
+            file.write("%s\n" % item)
+    print(f"The p values of the iterative imputed dataframe are: {pvalues}")
+#check_ks_test(imputed_df_scaled)
+
+def find_RMSE(method):
+    temp1 = impute_data_scaled_df.sub(method)
+    temp2 = temp1.mul(temp1)
+    RMSE = math.sqrt((temp2.sum().sum())/impute_missing)
+    print(f" The RMSE value of the iterative imputed dataframe is: {RMSE}")
+#find_RMSE(imputed_df_scaled)
