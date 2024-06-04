@@ -55,6 +55,7 @@ class TimeSeriesDataset(Dataset):
 
 # Load data
 data_missing = pd.read_csv("data_missing_10_percent.csv")
+data_complete = pd.read_csv("data_missing_0_percent.csv")
 
 # Drop first column due to csv creation
 data_missing = data_missing.iloc[: , 1:]
@@ -71,6 +72,8 @@ impute_size = len(data_missing) - train_size - val_size
 train_data = data_missing[:train_size]
 val_data = data_missing[train_size:train_size + val_size]
 impute_data = data_missing[train_size + val_size:]
+
+testing_data = data_complete[train_size + val_size:]
 
 #count the total number of missing values of data to be imputed
 impute_missing = impute_data.isnull().sum().sum()
@@ -95,11 +98,14 @@ val_data = pd.DataFrame(imputer.transform(val_data), columns=val_data.columns)
 val_data_scaled = min_max_scaler.transform(val_data)
 mask_val = mask[train_size:train_size + val_size].values
 
-# Using transform function not to "leak" information to test dataset 
+# Using transform function not to "leak" information to impute dataset 
 impute_data = pd.DataFrame(imputer.transform(impute_data), columns=impute_data.columns)
 impute_data_scaled = min_max_scaler.transform(impute_data)
-impute_data_scaled_df = pd.DataFrame(impute_data_scaled, columns=impute_data.columns)
 mask_impute = mask[train_size + val_size:].values
+
+# Using transform function not to "leak" information to test dataset 
+testing_data_scaled = min_max_scaler.transform(testing_data)
+testing_data_scaled_df = pd.DataFrame(testing_data_scaled, columns=impute_data.columns)
 
 # Creation of dataloaders (shuffle=False since ordering matters)
 train_dataset = TimeSeriesDataset(train_data_scaled, mask_train, seq_len)
@@ -246,15 +252,15 @@ imputed_df_scaled = pd.DataFrame(impute_data_combined, columns=df_original.colum
 impute_df_unscaled = pd.DataFrame(min_max_scaler.inverse_transform(impute_data_combined), columns=df_original.columns, index=impute_df_original.index)
 
 # Save the imputed dataframe to CSV
-impute_df_unscaled.to_csv('imputed_data.csv', index=False)
-print("Imputed data saved to imputed_data.csv.")
+#impute_df_unscaled.to_csv('imputed_data.csv', index=False)
+#print("Imputed data saved to imputed_data.csv.")
 
 def check_ks_test(method_name):
     file_path = os.path.join(os.getcwd(), "p-values.txt")
     print("starting the check_ks_test function")
     pvalues=[]
     for column in df_original.columns:
-        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(method_name[column], impute_data_scaled_df[column]))[1]}"
+        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(method_name[column], testing_data_scaled_df[column]))[1]}"
         pvalues.append(pvalue)
     with open(file_path, "w") as file:
         for item in pvalues:
@@ -263,8 +269,8 @@ def check_ks_test(method_name):
 #check_ks_test(imputed_df_scaled)
 
 def find_RMSE(method):
-    temp1 = impute_data_scaled_df.sub(method)
+    temp1 = testing_data_scaled_df.sub(method)
     temp2 = temp1.mul(temp1)
     RMSE = math.sqrt((temp2.sum().sum())/impute_missing)
     print(f" The RMSE value of the iterative imputed dataframe is: {RMSE}")
-#find_RMSE(imputed_df_scaled)
+find_RMSE(imputed_df_scaled)
