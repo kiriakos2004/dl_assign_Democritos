@@ -11,7 +11,7 @@ In this project various ML origin imputation methods are compared to Autencoders
   
   and have been implemented in “ML_imputers.py” code
 
-Regarding the dl portion of this project, Autoencoders and Variational Autoencoders have been implemented I order to impute missing values. The different implementations are:
+Regarding the dl portion of this project, Autoencoders, Variational Autoencoders and Generative Adversarial Networks have been implemented I order to impute missing values. The different implementations are:
 
   •	Autoencoder with 1 LSTM layers for encoder and 1 LSTM layers for the decoder
 
@@ -20,6 +20,8 @@ Regarding the dl portion of this project, Autoencoders and Variational Autoencod
   •	VAE Autoencoder with 1 LSTM layers for encoder and 1 LSTM layers for the decoder
 
   •	VAE Autoencoder with 2 LSTM layers for encoder and 2 LSTM layers for the decoder
+
+  •	GAN with 2 LSTM layers for generator and 2 LSTM layers for the discriminator
 
 In all of the above configurations various hyperparameters were tested and as long as regularization technics like dropout layers and weight_decay.The python library used was pytorch.
 
