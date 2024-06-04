@@ -1,0 +1,134 @@
+Autoencoders (LSTM) 10% (a):
+	num_epochs = 200
+	patience = 10
+	embedding_dim = 24
+	batch_size = 128
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 100
+	Loss: 0.0032
+	Validation Loss: 0.0152
+
+Autoencoders (LSTM) 10% (b):
+	num_epochs = 200
+	patience = 10
+	dropout_rate = 0.2
+	embedding_dim = 24
+	batch_size = 128
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 100
+	Loss: 0.0093
+	Validation Loss: 0.0162
+
+Autoencoders (LSTM) 1 layer 10% (c):
+	num_epochs = 600
+	patience = 100
+	dropout_rate = 0.1
+	embedding_dim = 40
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 10
+	Loss: 0.0030
+	Validation Loss: 0.0109
+	The RMSE value of the iterative imputed dataframe is: 0.4181
+
+Autoencoders (LSTM) 1 layer 10% (c1):
+	num_epochs = 600
+	patience = 100
+	dropout_rate = 0.2
+	embedding_dim = 40
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 10
+	Loss: 0.0048
+	Validation Loss: 0.0238
+	
+Autoencoders (LSTM) 10% (c2):
+	num_epochs = 600
+	patience = 100
+	dropout_rate = 0.2
+	embedding_dim = 20
+	batch_size = 128
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 100
+	Loss: 0.0018
+	Validation Loss: 0.1552
+	
+Autoencoders (LSTM) 1 layer 20% (c3):
+	num_epochs = 600
+	patience = 100
+	dropout_rate = 0.1
+	embedding_dim = 40
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 10
+	Loss: 0.0035
+	Validation Loss: 0.0117
+	The RMSE value of the iterative imputed dataframe is: 0.4138
+	
+Autoencoders (LSTM) 1 layer 30% (c4):
+	num_epochs = 600
+	patience = 100
+	dropout_rate = 0.1
+	embedding_dim = 40
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 10
+	Loss: 0.0035
+	Validation Loss: 0.0105
+	The RMSE value of the iterative imputed dataframe is: 0.3983
+
+Autoencoders (LSTM) 1 layer 50% (c5):
+	num_epochs = 600
+	patience = 100
+	dropout_rate = 0.1
+	embedding_dim = 40
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 10
+	Loss: 0.0049
+	Validation Loss: 0.0145
+	The RMSE value of the iterative imputed dataframe is: 0.3591
+
+VAE Autoencoders (LSTM) 2 layer 10% (e):
+	num_epochs = 400
+	patience = 80
+	dropout_rate = 0.1
+	embedding_dim = 24
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 100
+	Loss: 0.0199
+	Validation Loss: 0.0430
+
+GAN 2 layer 10%:
+	num_epochs = 200
+	patience = 80
+	dropout_rate = 0.1
+	hidden_dim = 128
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 10
+	Validation Loss: 0.0712
+	The RMSE value of the iterative imputed dataframe is: 0.1466
+
+GAN 2 layer 10%:
+	num_epochs = 300
+	patience = 20
+	dropout_rate = 0.1
+	hidden_dim = 128
+	batch_size = 32
+	learning_rate = 0.001
+	weight_decay = 0
+	seq_len = 100
+	Validation Loss: 
+	The RMSE value of the iterative imputed dataframe is: 
