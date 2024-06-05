@@ -122,13 +122,13 @@ GAN 2 layer 10%:
 	The RMSE value of the iterative imputed dataframe is: 0.1466
 
 GAN 2 layer 10%:
-	num_epochs = 300
-	patience = 20
+	num_epochs = 100
+	patience = 10
 	dropout_rate = 0.1
-	hidden_dim = 128
-	batch_size = 32
-	learning_rate = 0.001
+	hidden_dim = 256
+	batch_size = 64
+	learning_rate = 0.0001
 	weight_decay = 0
-	seq_len = 100
-	Validation Loss: 
-	The RMSE value of the iterative imputed dataframe is: 
+	seq_len = 10
+	Validation Loss: 0.0763
+	The RMSE value of the iterative imputed dataframe is: 0.2903
