@@ -108,6 +108,7 @@ VAE Autoencoders (LSTM) 2 layer 10% (e):
 	seq_len = 100
 	Loss: 0.0199
 	Validation Loss: 0.0430
+	The RMSE value of the iterative imputed dataframe is: 0.9871
 
 GAN 2 layer 10%:
 	num_epochs = 200
