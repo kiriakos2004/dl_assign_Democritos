@@ -23,7 +23,7 @@ Autoencoders (LSTM) 10% (b):
 
 Autoencoders (LSTM) 1 layer 10% (c):
 	num_epochs = 600
-	patience = 100
+	patience = 10
 	dropout_rate = 0.1
 	embedding_dim = 40
 	batch_size = 32
@@ -36,7 +36,7 @@ Autoencoders (LSTM) 1 layer 10% (c):
 
 Autoencoders (LSTM) 1 layer 10% (c1):
 	num_epochs = 600
-	patience = 100
+	patience = 10
 	dropout_rate = 0.2
 	embedding_dim = 40
 	batch_size = 32
@@ -48,7 +48,7 @@ Autoencoders (LSTM) 1 layer 10% (c1):
 	
 Autoencoders (LSTM) 10% (c2):
 	num_epochs = 600
-	patience = 100
+	patience = 10
 	dropout_rate = 0.2
 	embedding_dim = 20
 	batch_size = 128
@@ -60,7 +60,7 @@ Autoencoders (LSTM) 10% (c2):
 	
 Autoencoders (LSTM) 1 layer 20% (c3):
 	num_epochs = 600
-	patience = 100
+	patience = 10
 	dropout_rate = 0.1
 	embedding_dim = 40
 	batch_size = 32
@@ -73,7 +73,7 @@ Autoencoders (LSTM) 1 layer 20% (c3):
 	
 Autoencoders (LSTM) 1 layer 30% (c4):
 	num_epochs = 600
-	patience = 100
+	patience = 10
 	dropout_rate = 0.1
 	embedding_dim = 40
 	batch_size = 32
@@ -99,7 +99,7 @@ Autoencoders (LSTM) 1 layer 50% (c5):
 
 VAE Autoencoders (LSTM) 2 layer 10% (e):
 	num_epochs = 400
-	patience = 80
+	patience = 10
 	dropout_rate = 0.1
 	embedding_dim = 24
 	batch_size = 32
@@ -112,7 +112,7 @@ VAE Autoencoders (LSTM) 2 layer 10% (e):
 
 GAN 2 layer 10%:
 	num_epochs = 200
-	patience = 80
+	patience = 10
 	dropout_rate = 0.1
 	hidden_dim = 128
 	batch_size = 32
