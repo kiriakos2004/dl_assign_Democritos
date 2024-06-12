@@ -129,36 +129,6 @@ def create_kNN_imputed_dataframe(neighbors):
 #create_kNN_imputed_dataframe(7)[1].to_csv("kNNImputed.csv")
 #create_naive_imputed_dataframe()[1].to_csv("naiveImputed_10_percent.csv")
 
-#Check the ks for every imputation method
-# Insert the def of method e.g. "create_kNN_imputed_dataframe(neighbors=5)" default = create_naive_imputed_dataframe()
-def check_ks_test(method_name):
-    print("starting the check_ks_test function")
-    pvalues=[]
-    for column in column_names_clean:
-        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(method_name[column], no_nans_dublicate_scaled[column]))[1]}"
-        pvalues.append(pvalue)
-    print(f"The p values of the iterative imputed dataframe are: {pvalues}")
-#check_ks_test(naive_imputed_data)
-
-#Espesially for kNN imputing method we do 10 iterations and create a list of the results in order to find the mean of p_value of every column
-def check_ks_test_kNN():
-    print(f"starting the check_ks_test function for kNN")
-    results = []
-    for i in list:
-        pvalues=[]
-        for column in column_names_clean:
-            pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(create_kNN_imputed_dataframe(i)[0][column], no_nans_dublicate_scaled[column]))[1]}"
-            pvalues.append(pvalue)
-            t = time.localtime()
-            current_time = time.strftime("%H:%M:%S", t)
-            print(f"i appended new pvalue for time {current_time}")
-            print(pvalue)
-        results.append(pvalues)
-    print(results)
-    with open('kNN ks test results fo 50 percent.txt', 'w') as f:
-        f.write(str(results))
-#check_ks_test_kNN()
-
 #Find the average RMSE of the imputed values by first:substract the imputed dataset from inital dataset and then find square, 
 # sum imputed values and divide by number of imputed values and then find the square root, do 10 iterations and create a list of the results
 # Insert the def of method e.g. "create_iterative_imputed_dataframe()"

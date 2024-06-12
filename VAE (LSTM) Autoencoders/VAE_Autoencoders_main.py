@@ -255,19 +255,6 @@ impute_df_unscaled = pd.DataFrame(min_max_scaler.inverse_transform(impute_data_c
 #impute_df_unscaled.to_csv('imputed_data_VAE.csv', index=False)
 #print("Imputed data saved to imputed_data.csv.")
 
-def check_ks_test(method_name):
-    file_path = os.path.join(os.getcwd(), "p-values.txt")
-    print("starting the check_ks_test function")
-    pvalues=[]
-    for column in df_original.columns:
-        pvalue = f"pvalue of column {column} is: {(stats.ks_2samp(method_name[column], testing_data_scaled_df[column]))[1]}"
-        pvalues.append(pvalue)
-    with open(file_path, "w") as file:
-        for item in pvalues:
-            file.write("%s\n" % item)
-    print(f"The p values of the iterative imputed dataframe are: {pvalues}")
-#check_ks_test(imputed_df_scaled)
-
 def find_RMSE(method):
     temp1 = testing_data_scaled_df.sub(method)
     temp2 = temp1.mul(temp1)
