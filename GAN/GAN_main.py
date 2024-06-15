@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import math
 from scipy import stats
 
-num_epochs = 300
-patience = 20
+num_epochs = 200
+patience = 10
 weight_decay = 0
 n_features = 66
 
@@ -147,7 +147,8 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
         epoch_loss_d_real += loss_d_real.item()
 
         # Generator attempts to impute missing data
-        fake_data = generator(real_data)
+        noise = torch.randn(batch_size, seq_len, hidden_dim).to(device)
+        fake_data = generator(real_data, noise)
         fake_data[real_mask == 1] = real_data[real_mask == 1]  # Preserve real values where they exist
         outputs = discriminator(fake_data.detach())
         loss_d_fake = criterion(outputs, fake_labels)
@@ -160,7 +161,8 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
             optimizer_g.zero_grad()
             
             # Generator forward pass
-            fake_data = generator(real_data)
+            noise = torch.randn(batch_size, seq_len, hidden_dim).to(device)
+            fake_data = generator(real_data, noise)
             fake_data[real_mask == 1] = real_data[real_mask == 1]  # Preserve real values where they exist
             outputs = discriminator(fake_data)
             loss_g = criterion(outputs, real_labels)  # We want the generator to fool the discriminator
@@ -179,7 +181,8 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
             data_seq = data_seq.float().to(device)
             mask_seq = mask_seq.float().to(device)
             
-            output = generator(data_seq)
+            noise = torch.randn(data_seq.size(0), seq_len, hidden_dim).to(device)
+            output = generator(data_seq, noise)
             loss = validation_criterion(output, data_seq)
             masked_loss = (loss * mask_seq).sum() / mask_seq.sum()
             val_loss += masked_loss.item()
@@ -201,44 +204,62 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
     generator.train()  # Ensure the generator is back to training mode after validation
 
 # Save the generator model if needed
-#torch.save(generator.state_dict(), 'generator.pth')
+torch.save(generator.state_dict(), 'generator.pth')
 
-# Use trained model to impute data
-imputed_values = []
+# Use trained model to impute data 10 times
+num_imputations = 10
+imputed_datasets = []
 
-with torch.no_grad():
-    for batch in impute_dataloader:
-        data_seq, mask_seq = batch
-        data_seq = data_seq.float().to(device)
-        
-        output = generator(data_seq)
-        imputed_values.append(output.squeeze(0).cpu().numpy())
+for i in range(num_imputations):
+    imputed_values = []
+    with torch.no_grad():
+        for batch in impute_dataloader:
+            data_seq, mask_seq = batch
+            data_seq = data_seq.float().to(device)
+            
+            noise = torch.randn(data_seq.size(0), seq_len, hidden_dim).to(device)
+            output = generator(data_seq, noise)
+            imputed_values.append(output.squeeze(0).cpu().numpy())
 
-# Convert imputed_values to a DataFrame
-imputed_values = np.concatenate(imputed_values, axis=0)
-imputed_values = imputed_values[:len(impute_data_scaled)]  # Ensure the correct length
+    # Convert imputed_values to a DataFrame
+    imputed_values = np.concatenate(imputed_values, axis=0)
+    imputed_values = imputed_values[:len(impute_data_scaled)]  # Ensure the correct length
 
-# Construct the imputed dataframe for the 20% impute_data
-impute_df_original = df_original.iloc[train_size + val_size:train_size + val_size + len(imputed_values)]
-impute_df = pd.DataFrame(imputed_values, columns=df_original.columns, index=impute_df_original.index)
+    # Construct the imputed dataframe for the 20% impute_data
+    impute_df_original = df_original.iloc[train_size + val_size:train_size + val_size + len(imputed_values)]
+    impute_df = pd.DataFrame(imputed_values, columns=df_original.columns, index=impute_df_original.index)
 
-# Combine imputed values with the original impute_data to leave observed values untouched
-impute_data_combined = impute_data_scaled.copy()
-impute_data_combined[mask_impute == 0] = impute_df.values[mask_impute == 0]
+    # Combine imputed values with the original impute_data to leave observed values untouched
+    impute_data_combined = impute_data_scaled.copy()
+    impute_data_combined[mask_impute == 0] = impute_df.values[mask_impute == 0]
 
-imputed_df_scaled = pd.DataFrame(impute_data_combined, columns=df_original.columns)
+    imputed_df_scaled = pd.DataFrame(impute_data_combined, columns=df_original.columns)
+    imputed_datasets.append(imputed_df_scaled)
 
-# Unscale imputed dataset back to original numbers
-impute_df_unscaled = pd.DataFrame(min_max_scaler.inverse_transform(impute_data_combined), columns=df_original.columns, index=impute_df_original.index)
-
-# Save the imputed dataframe to CSV
-#impute_df_unscaled.to_csv('imputed_data_GAN.csv', index=False)
-#print("Imputed data saved to imputed_data_GAN.csv.")
-
-
-def find_RMSE(method):
+# Function to calculate RMSE
+def find_RMSE(method, testing_data_scaled_df, impute_missing):
     temp1 = testing_data_scaled_df.sub(method)
     temp2 = temp1.mul(temp1)
     RMSE = math.sqrt((temp2.sum().sum())/impute_missing)
-    print(f" The RMSE value of the iterative imputed dataframe is: {RMSE}")
-find_RMSE(imputed_df_scaled)
+    return RMSE
+
+# Calculate RMSE for each imputed dataset
+rmse_values = [find_RMSE(imputed_df, testing_data_scaled_df, impute_missing) for imputed_df in imputed_datasets]
+
+# Save RMSE values to a text file
+with open('rmse_values.txt', 'w') as f:
+    for i, rmse in enumerate(rmse_values, 1):
+        f.write(f"RMSE value for imputation {i}: {rmse}\n")
+
+# Print RMSE values
+for i, rmse in enumerate(rmse_values, 1):
+    print(f"RMSE value for imputation {i}: {rmse}")
+
+# Create a boxplot of the RMSE values
+plt.figure(figsize=(10, 6))
+plt.boxplot(rmse_values)
+plt.xlabel('Imputations')
+plt.ylabel('RMSE')
+plt.title('Boxplot of RMSE Values for Imputations')
+plt.savefig('rmse_boxplot.png')
+plt.show()
