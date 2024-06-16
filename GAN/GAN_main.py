@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import math
 from scipy import stats
 
-num_epochs = 200
-patience = 10
+num_epochs = 400
+patience = 20
 weight_decay = 0
 n_features = 66
 

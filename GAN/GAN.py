@@ -3,11 +3,11 @@ import torch.nn as nn
 import torch.optim as optim
 
 # Define training parameters
-hidden_dim = 128
+hidden_dim = 256
 batch_size = 128
 learning_rate = 0.0001
 seq_len = 100
-dropout_rate = 0.1
+dropout_rate = 0
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Generator(nn.Module):
