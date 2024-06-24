@@ -105,7 +105,7 @@ impute_dataset = TimeSeriesDataset(impute_data_scaled, mask_impute, seq_len)
 impute_dataloader = DataLoader(impute_dataset, batch_size=1, shuffle=False)
 
 # Define how many times to train the generator for each discriminator update
-generator_updates_per_discriminator_update = 5
+discriminator_updates_per_generator_update = 5
 
 # Initialize models
 generator = Generator(seq_len, n_features).to(device)
@@ -132,43 +132,43 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
         real_data = real_data.to(device).float()  # Convert to float32
         real_mask = real_mask.to(device).float()
 
-        # Train Discriminator
-        optimizer_d.zero_grad()
+        # Train Generator
+        optimizer_g.zero_grad()
         
-        # Create labels for real and fake data
-        batch_size = real_data.size(0)
-        real_labels = torch.ones(batch_size, 1).to(device)
-        fake_labels = torch.zeros(batch_size, 1).to(device)
-
-        # Discriminator on real data
-        outputs = discriminator(real_data)
-        loss_d_real = criterion(outputs, real_labels)
-        loss_d_real.backward()
-        epoch_loss_d_real += loss_d_real.item()
-
-        # Generator attempts to impute missing data
+        # Generator forward pass
         noise = torch.randn(batch_size, seq_len, hidden_dim).to(device)
         fake_data = generator(real_data, noise)
         fake_data[real_mask == 1] = real_data[real_mask == 1]  # Preserve real values where they exist
-        outputs = discriminator(fake_data.detach())
-        loss_d_fake = criterion(outputs, fake_labels)
-        loss_d_fake.backward()
-        optimizer_d.step()
-        epoch_loss_d_fake += loss_d_fake.item()
+        outputs = discriminator(fake_data)
+        loss_g = criterion(outputs, real_labels)  # We want the generator to fool the discriminator
+        loss_g.backward()
+        optimizer_g.step()
+        epoch_loss_g += loss_g.item()
 
-        # Train Generator multiple times
-        for _ in range(generator_updates_per_discriminator_update):
-            optimizer_g.zero_grad()
-            
-            # Generator forward pass
+        # Train Discriminator multiple times
+        for _ in range(discriminator_updates_per_generator_update):
+            optimizer_d.zero_grad()
+
+            # Create labels for real and fake data
+            batch_size = real_data.size(0)
+            real_labels = torch.ones(batch_size, 1).to(device)
+            fake_labels = torch.zeros(batch_size, 1).to(device)
+
+            # Discriminator on real data
+            outputs = discriminator(real_data)
+            loss_d_real = criterion(outputs, real_labels)
+            loss_d_real.backward()
+            epoch_loss_d_real += loss_d_real.item()
+
+            # Generator attempts to impute missing data
             noise = torch.randn(batch_size, seq_len, hidden_dim).to(device)
             fake_data = generator(real_data, noise)
             fake_data[real_mask == 1] = real_data[real_mask == 1]  # Preserve real values where they exist
-            outputs = discriminator(fake_data)
-            loss_g = criterion(outputs, real_labels)  # We want the generator to fool the discriminator
-            loss_g.backward()
-            optimizer_g.step()
-            epoch_loss_g += loss_g.item()
+            outputs = discriminator(fake_data.detach())
+            loss_d_fake = criterion(outputs, fake_labels)
+            loss_d_fake.backward()
+            optimizer_d.step()
+            epoch_loss_d_fake += loss_d_fake.item()
 
     tqdm.write(f'Epoch [{epoch+1}/{num_epochs}], Loss D: {epoch_loss_d_real + epoch_loss_d_fake:.4f}, Loss G: {epoch_loss_g:.4f}')
     
@@ -197,9 +197,9 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
         epochs_with_no_improve += 1
     
     if epochs_with_no_improve >= patience and epoch >= 0.6*num_epochs:
-        print(f'Early stopping criteria raeched, at epoch: {epoch}')
+        print(f'Early stopping criteria reached, at epoch: {epoch}')
         break
-    print(f'Current number of epochs with no improve from {round(best_val_loss,4)} is:{epochs_with_no_improve}')
+    print(f'Current number of epochs with no improve from {round(best_val_loss, 4)} is:{epochs_with_no_improve}')
 
     generator.train()  # Ensure the generator is back to training mode after validation
 
