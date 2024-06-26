@@ -19,8 +19,7 @@ patience = 20
 weight_decay = 0
 n_features = 66
 
-#choose parameters specific to model
-
+# Choose parameters specific to the model
 dropout_rate = GAN.dropout_rate
 hidden_dim = GAN.hidden_dim
 learning_rate = GAN.learning_rate
@@ -47,7 +46,7 @@ class TimeSeriesDataset(Dataset):
 data_missing = pd.read_csv("data_missing_10_percent.csv")
 data_complete = pd.read_csv("data_missing_0_percent.csv")
 
-# Drop first column due to csv creation
+# Drop first column due to CSV creation
 data_missing = data_missing.iloc[:, 1:]
 
 # Copy dataset to prevent altering (will be used later)
@@ -65,7 +64,7 @@ impute_data = data_missing[train_size + val_size:]
 
 testing_data = data_complete[train_size + val_size:]
 
-#count the total number of missing values of data to be imputed
+# Count the total number of missing values of data to be imputed
 impute_missing = impute_data.isnull().sum().sum()
 
 # Create mask for missing values
@@ -94,7 +93,7 @@ mask_impute = mask[train_size + val_size:].values
 testing_data_scaled = min_max_scaler.transform(testing_data)
 testing_data_scaled_df = pd.DataFrame(testing_data_scaled, columns=impute_data.columns)
 
-# Creation of dataloaders (shuffle=False since ordering matters)
+# Creation of DataLoaders (shuffle=False since ordering matters)
 train_dataset = TimeSeriesDataset(train_data_scaled, mask_train, seq_len)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
@@ -131,6 +130,11 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
     for real_data, real_mask in tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{num_epochs}", leave=False):
         real_data = real_data.to(device).float()  # Convert to float32
         real_mask = real_mask.to(device).float()
+        
+        # Create labels for real and fake data
+        batch_size = real_data.size(0)
+        real_labels = torch.ones(batch_size, 1).to(device)
+        fake_labels = torch.zeros(batch_size, 1).to(device)
 
         # Train Generator
         optimizer_g.zero_grad()
@@ -148,11 +152,6 @@ for epoch in tqdm(range(num_epochs), desc="Training Progress"):
         # Train Discriminator multiple times
         for _ in range(discriminator_updates_per_generator_update):
             optimizer_d.zero_grad()
-
-            # Create labels for real and fake data
-            batch_size = real_data.size(0)
-            real_labels = torch.ones(batch_size, 1).to(device)
-            fake_labels = torch.zeros(batch_size, 1).to(device)
 
             # Discriminator on real data
             outputs = discriminator(real_data)
